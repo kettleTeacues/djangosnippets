@@ -1,19 +1,48 @@
 from urllib import request, response
-from django.test import TestCase
+from django.contrib.auth import get_user_model
+from django.test import TestCase, Client, RequestFactory
 from django.urls import resolve
 
+from snippets.models import Snippet
 from snippets.views import top, snippet_new, snippet_edit, snippet_detail
 
-class TopPageViewTest(TestCase):
-    def test_top_returns_200(self):
-        # HttpRequestオブジェクトの作成
-        response = self.client.get('/')
-        self.assertEqual(response.status_code, 200)
+UserModel = get_user_model()
 
-    def test_top_returns_expected_content(self):
+class TopPageRenderSnippetsTest(TestCase):
+    def setUp(self):
+        self.user = UserModel.objects.create(
+            username = 'test_user',
+            email = 'test@example.com',
+            password = 'top_secret_pass0001',
+        )
+        self.snippet = Snippet.objects.create(
+            title = 'title',
+            code = 'print("hello world")',
+            description = 'description1',
+            created_by = self.user,
+        )
+    
+    def test_should_return_snippet_title(self):
+        request = RequestFactory().get('/')
+        request.user = self.user
+        response = top(request)
+        self.assertContains(response, self.snippet.title)
+    
+    def test_should_return_username(self):
+        request = RequestFactory().get('/')
+        request.user = self.user
+        response = top(request)
+        self.assertContains(response, self.user.username)
+
+class TopPageTest(TestCase):
+    def test_top_returns_200_and_expected_title(self):
         # HttpRequestオブジェクトの作成
         response = self.client.get('/')
-        self.assertEqual(response.content, b'Hello World')
+        self.assertContains(response, 'Djangoスニペット', status_code=200)
+
+    def test_top_page_uses_expected_template(self):
+        response = self.client.get('/')
+        self.assertTemplateUsed(response, 'snippets/top.html')
 
 class CreateSnippetTest(TestCase):
     def test_should_resolve_snippet_new(self):
