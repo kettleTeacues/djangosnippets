@@ -4,7 +4,7 @@ from rest_framework import routers
 from snippets import views, api_views as snippet_api_views
 
 router = routers.DefaultRouter()
-router.register('snippets', snippet_api_views.SnippetViewSet)
+router.register('', snippet_api_views.SnippetViewSet)
 
 urlpatterns = [
     path('new/', views.snippet_new, name='snippet_new'),
